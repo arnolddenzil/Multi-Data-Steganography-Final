@@ -13,6 +13,8 @@ vault = {}
 
 hash_obj = hashlib.sha3_224()
 
+data_saved = True
+
 
 
 def get_encoded_file(file_path):
@@ -24,39 +26,9 @@ def get_encoded_file(file_path):
     # Encode the file data as a Base64 string
     encoded_file = base64.b64encode(data).decode('utf-8')
 
-    # file_type = file_path.split(".")[-1]
-    # print(file_type)
-
     file_name = os.path.basename(file_path)
 
-    # if file_type in ['jpeg', 'jpg', 'png']:
-    #     print("the file is a image type")
-    #     encoded_file = "img" + encoded_file
-    #
-    # elif file_type in ['mp4', 'mkv']:
-    #     print("the file is a video type")
-
-    # add the file type to the start of the encoded file to save it in the correct format during retrieval
-    encoded_file = file_name + "###" + encoded_file
-
     return encoded_file
-
-    # # print(f"Encoded image : {encoded_image}")
-    #
-    # # Create a dictionary to hold the JSON data
-    # data = {
-    #     'image': encoded_image
-    # }
-    #
-    # # Encode the data as a JSON string
-    # json_string = json.dumps(data)
-    #
-    # print(f"Json_string : {json_string}")
-    #
-    #
-    # # Save the JSON string to a file
-    # with open('data.json', 'w') as f:
-    #     f.write(json_string)
 
 
 def get_hashed_text(word):
@@ -65,50 +37,76 @@ def get_hashed_text(word):
     return obj_sha3.hexdigest()
 
 
+def load_vault_from_img():
+    global vault
+
+    try:
+        # Extract the hidden file in the image
+        os.system(f'tar -xvf {img_path}')
+
+        with open('data.json', 'r') as f:
+            vault_str = f.read()
+
+        os.remove("data.json")
+
+        # Lsb retrieval
+        # vault_str = lsb.reveal(str(img_path))
+
+        vault = json.loads(vault_str)
+
+    except FileNotFoundError:
+        print("No data is hidden in this image")
+
+
 def open_image():
     global img_path
     img_path = input("Enter image path : ")
     image = Image.open(img_path)
     image.show()
 
+    load_vault_from_img()
+
 
 def save_image():
-    # img_type = img_path.split(".")[-1]        # Will get the image type/format
-    # print(img_type)
-    # print(img_path)
+    global vault
+    global data_saved
+    print(len(vault))
+
 
     # Encode the data as a JSON string
     json_string = json.dumps(vault)
 
-    print(f"Json_string : {json_string}")
+    # print(f"Json_string : {json_string}")
 
-    secret = lsb.hide(str(img_path), json_string)
-    # os.remove("./bmw.png")
-    secret.save(img_path)
+    #Lsb hide method
+    # secret = lsb.hide(str(img_path), json_string)
+    # secret.save(img_path)
 
-    # # Save the JSON string to a file
-    # with open('data.json', 'w') as f:
-    #     f.write(json_string)
-    #
-    # # Create a new zip file
-    # with zipfile.ZipFile('temporary.zip', 'w') as zip:
-    #     # Add a file to the zip file
-    #     zip.write('data.json')
-    #
-    # # Hide zip file in an image and save new image
-    # os.system(f"copy /b {img_path}+temporary.zip hidden_img.png")
-    #
-    # os.remove("data.json")
-    # os.remove("temporary.zip")
-    # if os.path.exists("data.json") or os.path.exists("temporary.zip"):
-    #     print("file still exit")
-    # else:
-    #     print("the temporary files are deleted")
+    # Save the JSON string to a file
+    with open('data.json', 'w') as f:
+        f.write(json_string)
 
+    # Create a new zip file
+    with zipfile.ZipFile('temporary.zip', 'w') as zip:
+        # Add a file to the zip file
+        zip.write('data.json')
+
+    # Hide zip file in an image and save new image
+    os.system(f"copy /b {img_path}+temporary.zip {img_path}")
+
+    os.remove("data.json")
+    os.remove("temporary.zip")
+
+    data_saved = True
+    if os.path.exists("data.json") or os.path.exists("temporary.zip"):
+        print("file still exit")
+    else:
+        print("the temporary files are deleted")
 
 
 def hide_text():
     global vault
+    global data_saved
     secret = input("Enter the secret to hide : ")
     k = input("Enter secret key : ")
     encrypted_data = crypto.encrypt_text(key=k, text=secret)
@@ -118,55 +116,44 @@ def hide_text():
     key = get_hashed_text(k)
     vault[key] = text_to_hide
 
+    data_saved = False
 
+    print(vault)
+    print(len(vault))
 
-
-
-    # secret = lsb.hide(r"C:\Users\Arnold\Pictures\test\field.png", "Okat nadfljl")
-    # print(secret)
-    # secret.save(r"C:\Users\Arnold\Pictures\test\new\sneekyfield.png")
-    # print(lsb.reveal(r"C:\Users\Arnold\Pictures\test\new\sneekyfield.png"))
 
 
 def hide_file():
     global vault
+    global data_saved
     file_path = input("Enter the file path : ")
+    k = input("Enter key : ")
     print(file_path)
+    file_name = os.path.basename(file_path)
 
     encoded_file = get_encoded_file(file_path)
+
+    encrypted_data = crypto.encrypt_text(key=k, text=encoded_file)
+
+    encoded_file = file_name + "###" + encrypted_data
     print(encoded_file)
-    #
-    k = input("Enter key : ")
-    #
+    # k = input("Enter key : ")
     key = get_hashed_text(k)
 
     vault[key] = encoded_file
 
+    data_saved = False
+
 
 def show_data():
-    # print("inside show data")
-    # print(lsb.reveal("hidden.jpg"))
-    # print(4)
     global vault
+    global img_path
+    global data_saved
 
-    if len(vault) > 0:
+    if not data_saved and len(vault)>0:
         print("the vault has some objects...saved automatically")
         save_image()
-
-
-
-    # # Extract the hidden file in the image
-    # os.system('tar -xvf hidden_img.png')
-    #
-    # with open('data.json', 'r') as f:
-    #     vault_str = f.read()
-
-
-    vault_str = lsb.reveal(str(img_path))
-
-
-    vault = json.loads(vault_str)
-    print(vault, type(vault))
+        data_saved = True
 
     k = input("Enter key : ")
 
@@ -190,8 +177,11 @@ def show_data():
             print(secret)
 
         else:
+            secret_file_in_base64 = crypto.decrypt_text(key=k, ciphertext=cipher)
+
+
             # Decode the Base64 string into image data
-            file_data = base64.b64decode(cipher)
+            file_data = base64.b64decode(secret_file_in_base64)
 
             # Save the image data to a file
             with open(f'extracted{file_name}', 'wb') as f:
@@ -201,10 +191,13 @@ def show_data():
 def show_vault():
     global vault
     global img_path
-    vault_str = lsb.reveal(img_path)
 
-    vault = json.loads(vault_str)
-    print(vault, type(vault))
+    print(vault)
+    vault_len = len(vault)
+
+    print("################")
+    print(vault_len)
+
 
 
 
@@ -247,8 +240,8 @@ while again:
                 pass
             else:
                 ask_again = False
-    else:
-        ans = input(f"Do you want to continue? : ")
-        if ans not in ['yes', 'y', 'ok', 'okay']:
-            again = False
+    # else:
+    #     ans = input(f"Do you want to continue? : ")
+    #     if ans not in ['yes', 'y', 'ok', 'okay']:
+    #         again = False
 
