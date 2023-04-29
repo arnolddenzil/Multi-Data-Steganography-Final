@@ -11,6 +11,8 @@ from stegano import lsb
 img_path = str
 vault = {}
 
+data_saved = True
+
 hash_obj = hashlib.sha3_224()
 
 
@@ -67,12 +69,24 @@ def get_hashed_text(word):
 
 def open_image():
     global img_path
+    global vault
     img_path = input("Enter image path : ")
-    image = Image.open(img_path)
-    image.show()
+
+    try:
+        image = Image.open(img_path)
+        image.show()
+    except FileNotFoundError:
+        print("File path is not correct or file not found")
+    else:
+        vault_str = lsb.reveal(str(img_path))
+        try:
+            vault = json.loads(vault_str)
+        except TypeError:
+            print("No data stored in the image")
 
 
 def save_image():
+    global data_saved
     # img_type = img_path.split(".")[-1]        # Will get the image type/format
     # print(img_type)
     # print(img_path)
@@ -80,11 +94,21 @@ def save_image():
     # Encode the data as a JSON string
     json_string = json.dumps(vault)
 
-    print(f"Json_string : {json_string}")
+    # print(f"Json_string : {json_string}")
 
     secret = lsb.hide(str(img_path), json_string)
     # os.remove("./bmw.png")
-    secret.save(img_path)
+
+    try:
+
+        secret.save(img_path)
+    except Exception:
+        print("The data is too long to hide inside the image...\n"
+              "Aborting latest save")
+
+    data_saved = True
+    print("Data saved in the image")
+
 
     # # Save the JSON string to a file
     # with open('data.json', 'w') as f:
@@ -109,6 +133,7 @@ def save_image():
 
 def hide_text():
     global vault
+    global data_saved
     secret = input("Enter the secret to hide : ")
     k = input("Enter secret key : ")
     encrypted_data = crypto.encrypt_text(key=k, text=secret)
@@ -117,6 +142,8 @@ def hide_text():
 
     key = get_hashed_text(k)
     vault[key] = text_to_hide
+
+    data_saved = False
 
 
 
@@ -130,17 +157,20 @@ def hide_text():
 
 def hide_file():
     global vault
+    global data_saved
     file_path = input("Enter the file path : ")
     print(file_path)
 
     encoded_file = get_encoded_file(file_path)
-    print(encoded_file)
+    print("file encoding complete")
+    # print(encoded_file)
     #
     k = input("Enter key : ")
     #
     key = get_hashed_text(k)
 
     vault[key] = encoded_file
+    data_saved = False
 
 
 def show_data():
@@ -149,9 +179,10 @@ def show_data():
     # print(4)
     global vault
 
-    if len(vault) > 0:
-        print("the vault has some objects...saved automatically")
+    if len(vault) > 0 and not data_saved:
+        print("the vault has some unsaved data")
         save_image()
+        print("data saved automatically")
 
 
 
@@ -162,11 +193,8 @@ def show_data():
     #     vault_str = f.read()
 
 
-    vault_str = lsb.reveal(str(img_path))
 
 
-    vault = json.loads(vault_str)
-    print(vault, type(vault))
 
     k = input("Enter key : ")
 
@@ -176,7 +204,7 @@ def show_data():
         print(key)
         print("There is no data stored for that key")
     else:
-        print(key)
+        # print(key)
         # a = str(hash(k))
 
         key_val = vault[key]
@@ -200,11 +228,8 @@ def show_data():
 
 def show_vault():
     global vault
-    global img_path
-    vault_str = lsb.reveal(img_path)
-
-    vault = json.loads(vault_str)
     print(vault, type(vault))
+    print(len(vault))
 
 
 
@@ -247,8 +272,8 @@ while again:
                 pass
             else:
                 ask_again = False
-    else:
-        ans = input(f"Do you want to continue? : ")
-        if ans not in ['yes', 'y', 'ok', 'okay']:
-            again = False
+    # else:
+    #     ans = input(f"Do you want to continue? : ")
+    #     if ans not in ['yes', 'y', 'ok', 'okay']:
+    #         again = False
 
