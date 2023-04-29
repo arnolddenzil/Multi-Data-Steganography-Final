@@ -96,18 +96,19 @@ def save_image():
 
     # print(f"Json_string : {json_string}")
 
-    secret = lsb.hide(str(img_path), json_string)
+
     # os.remove("./bmw.png")
 
     try:
-
+        secret = lsb.hide(str(img_path), json_string)
         secret.save(img_path)
     except Exception:
         print("The data is too long to hide inside the image...\n"
               "Aborting latest save")
 
-    data_saved = True
-    print("Data saved in the image")
+    else:
+        data_saved = True
+        print("Data saved in the image")
 
 
     # # Save the JSON string to a file
