@@ -62,6 +62,21 @@ filename : {result["filename"]}
     hidden_data_textbox_showtab.configure(state="disabled")
 
 
+def on_click_show_data_tab_clear():
+    key_entry.delete(0, "end")
+    hidden_data_textbox_showtab.configure(state="normal")
+    hidden_data_textbox_showtab.delete("0.0", "end")
+    hidden_data_textbox_showtab.insert("0.0", "Hidden data will be displayed here")
+    hidden_data_textbox_showtab.configure(state="disabled")
+
+    # msg = hidden_data_textbox_showtab.get("0.0", "end")
+    # if msg[:len(msg)-1] == "Hidden data will be displayed here":
+    #     pass
+    # else:
+    #     hidden_data_textbox_showtab.configure(state="normal")
+    #     hidden_data_textbox_showtab.delete("0.0", "end")
+    #     hidden_data_textbox_showtab.configure(state="disabled")
+
 
 
 # Left Section
@@ -108,7 +123,7 @@ show_data_bottom_frame.grid(row=2, column=0, columnspan=2)
 
 save_as_file_btn = ctk.CTkButton(show_data_bottom_frame, text="Save As File", width=100)
 save_as_file_btn.grid(row=2, column=0, padx=20, pady=5)
-clear_btn_showtab = ctk.CTkButton(show_data_bottom_frame, text="Clear", width=100)
+clear_btn_showtab = ctk.CTkButton(show_data_bottom_frame, text="Clear", width=100, command=on_click_show_data_tab_clear)
 clear_btn_showtab.grid(row=2, column=1, padx=20, pady=5)
 
 
