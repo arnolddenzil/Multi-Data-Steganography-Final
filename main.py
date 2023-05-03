@@ -69,6 +69,7 @@ def open_image():
 def save_image():
     global vault
     global data_saved
+    print(img_path)
     print(len(vault))
 
 
@@ -182,6 +183,11 @@ def show_data():
             # Decode the Base64 string into image data
             file_data = base64.b64decode(secret_file_in_base64)
 
+            print(file_data)
+            print(type(file_data))
+            print(len(file_data))
+
+            print(file_name)
             # Save the image data to a file
             with open(f'extracted{file_name}', 'wb') as f:
                 f.write(file_data)
