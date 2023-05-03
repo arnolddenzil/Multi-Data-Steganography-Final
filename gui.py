@@ -1,38 +1,12 @@
 import customtkinter as ctk
 import tkinter
-from PIL import Image, ImageTk
-import backend as bnd
+from PIL import Image
 
 root = ctk.CTk()
 ctk.set_appearance_mode("dark")
 
 root.title("Multidata Steganography")
 
-
-def openImage():
-    filename = tkinter.filedialog.askopenfilename(initialdir="C:/Users/Arnold/Pictures", title="Select a File", filetypes=[('Image File', '*.png')])
-
-    print(filename)
-
-    bnd.img_path = filename
-
-    image = Image.open(filename)
-
-    image = image.resize((700, 600))
-
-    #Load an image in the script
-    one = ImageTk.PhotoImage(image=image)
-    root.one = one
-
-    # Add image to the Canvas Items
-    canvas.create_image(0, 0, anchor="nw", image=one)
-
-    bnd.load_vault_from_img()
-
-
-def on_click_show_data():
-    key = key_entry.get()
-    bnd.show_data(k=key)
 
 
 # Left Section
@@ -42,7 +16,7 @@ left_frame.pack(side="left", padx=10, pady=10, fill="both")
 canvas = tkinter.Canvas(left_frame, width=700, height=600,)
 canvas.grid(row=0, column=0, columnspan=2, pady=5)
 
-open_image_btn = ctk.CTkButton(left_frame, text="Open Image", command=openImage)
+open_image_btn = ctk.CTkButton(left_frame, text="Open Image")
 open_image_btn.grid(row=1, column=0, padx=10, pady=10)
 
 save_image_btn = ctk.CTkButton(left_frame, text="Save Image")
@@ -63,7 +37,7 @@ tabsection.set("🔓  Show Data")
 # Show data section
 key_entry = ctk.CTkEntry(show_data_tab, placeholder_text="Enter Key", width=250)
 key_entry.grid(row=0, column=0, padx=10, pady=20)
-key_submit_button = ctk.CTkButton(show_data_tab, text="Show Data", width=30, command=on_click_show_data)
+key_submit_button = ctk.CTkButton(show_data_tab, text="Show Data", width=30)
 key_submit_button.grid(row=0, column=1, padx=10, pady=20)
 
 

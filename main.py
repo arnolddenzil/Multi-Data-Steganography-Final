@@ -5,7 +5,6 @@ import os
 import zipfile
 import hashlib
 import base64
-from stegano import lsb
 
 
 img_path = str
