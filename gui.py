@@ -2,32 +2,37 @@ import customtkinter as ctk
 import tkinter
 from PIL import Image, ImageTk
 import backend as bnd
+from tkinter import messagebox
+
+INITIAL_DIRECTORY = "F:\Projects\Multi-Data-Steganography-Final"
 
 root = ctk.CTk()
 ctk.set_appearance_mode("dark")
 
 root.title("Multidata Steganography")
 
+received_secret_data = {"status": False}
 
 def openImage():
     # filename = tkinter.filedialog.askopenfilename(initialdir="C:/Users/Arnold/Pictures", title="Select a File", filetypes=[('Image File', '*.png')])
-    filepath = tkinter.filedialog.askopenfilename(initialdir="F:\Projects\Multi-Data-Steganography-Final", title="Select a File", filetypes=[('Image File', '*.png')])
+    filepath = tkinter.filedialog.askopenfilename(initialdir=INITIAL_DIRECTORY, title="Select a File", filetypes=[('Image File', '*.png')])
 
-    # Replace forward slash of filepath with backward slash for proper image saving
-    filepath = filepath.replace("/", "\\")
-    bnd.img_path = filepath
-    print(filepath)
-    image = Image.open(filepath)
-    image = image.resize((700, 600))
+    if filepath:
+        # Replace forward slash of filepath with backward slash for proper image saving
+        filepath = filepath.replace("/", "\\")
+        bnd.img_path = filepath
+        print(filepath)
+        image = Image.open(filepath)
+        image = image.resize((700, 600))
 
-    # Load an image in the script
-    one = ImageTk.PhotoImage(image=image)
-    root.one = one
+        # Load an image in the script
+        one = ImageTk.PhotoImage(image=image)
+        root.one = one
 
-    # Add image to the Canvas Items
-    canvas.create_image(0, 0, anchor="nw", image=one)
+        # Add image to the Canvas Items
+        canvas.create_image(0, 0, anchor="nw", image=one)
 
-    bnd.load_vault_from_img()
+        bnd.load_vault_from_img()
 
 
 def on_click_save_image():
@@ -35,14 +40,22 @@ def on_click_save_image():
 
 
 def on_click_show_data():
+    global received_secret_data
     key = key_entry.get()
     result = bnd.show_data(k=key)
 
     hidden_data_textbox_showtab.configure(state="normal")
     hidden_data_textbox_showtab.delete("0.0", "end")
     if result["type"] == "plaintext":
+        received_secret_data["status"] = True
+        received_secret_data["type"] = "plaintext"
+        received_secret_data["content"] = result["result"]
         hidden_data_textbox_showtab.insert("0.0", result["result"])
     elif result["type"] == "file":
+        received_secret_data["status"] = True
+        received_secret_data["type"] = "file"
+        received_secret_data["filename"] = result["filename"]
+        received_secret_data["content"] = result["filedata"]
         hidden_data_textbox_showtab.insert("0.0",
 f'''
 Stored File Detail :
@@ -58,11 +71,12 @@ filename : {result["filename"]}
 
 
     else:
-        hidden_data_textbox_showtab.insert("0.0", result)
+        hidden_data_textbox_showtab.insert("0.0", result["result"])
     hidden_data_textbox_showtab.configure(state="disabled")
 
 
 def on_click_show_data_tab_clear():
+    received_secret_data["status"] = False
     key_entry.delete(0, "end")
     hidden_data_textbox_showtab.configure(state="normal")
     hidden_data_textbox_showtab.delete("0.0", "end")
@@ -77,6 +91,40 @@ def on_click_show_data_tab_clear():
     #     hidden_data_textbox_showtab.delete("0.0", "end")
     #     hidden_data_textbox_showtab.configure(state="disabled")
 
+
+def on_click_save_as_file():
+    global received_secret_data
+    if received_secret_data["status"] == False:
+        messagebox.showerror(title="Oh oh.. ☹️", message="You need to first get some data to able to store it")
+
+    else:
+        if received_secret_data["type"] == "file":
+            file_name = received_secret_data["filename"]
+            file_type = received_secret_data["filename"].split(".")[-1]
+            print(file_type)
+            filepath = tkinter.filedialog.asksaveasfilename(initialdir=INITIAL_DIRECTORY,
+                                                            title="Select File Storage Path",
+                                                            initialfile=file_name,
+                                                            filetypes=[(file_type, file_type)],
+                                                            defaultextension=file_type)
+            # filepath = tkinter.filedialog.asksaveasfilename(initialdir=INITIAL_DIRECTORY, title="Select File Storage Path", initialfile=file_name, defaultextension=".txt")
+            # print(filepath, type(filepath))
+            if filepath:
+                # Save the image data to a file
+                with open(filepath, 'wb') as f:
+                    f.write(received_secret_data["content"])
+                messagebox.showinfo(title="Success", message="You have successfully saved the data to a file")
+        else:
+            filepath = tkinter.filedialog.asksaveasfilename(initialdir=INITIAL_DIRECTORY,
+                                                            title="Select File Storage Path",
+                                                            initialfile="secret",
+                                                            filetypes=[(".txt", ".txt")],
+                                                            defaultextension=".txt")
+            if filepath:
+                # Save the image data to a file
+                with open(filepath, 'w') as f:
+                    f.write(received_secret_data["content"])
+                messagebox.showinfo(title="Success", message="You have successfully saved the data to a file")
 
 
 # Left Section
@@ -121,7 +169,7 @@ hidden_data_textbox_showtab.configure(state="disabled")
 show_data_bottom_frame = ctk.CTkFrame(show_data_tab, fg_color="transparent")
 show_data_bottom_frame.grid(row=2, column=0, columnspan=2)
 
-save_as_file_btn = ctk.CTkButton(show_data_bottom_frame, text="Save As File", width=100)
+save_as_file_btn = ctk.CTkButton(show_data_bottom_frame, text="Save As File", width=100, command=on_click_save_as_file)
 save_as_file_btn.grid(row=2, column=0, padx=20, pady=5)
 clear_btn_showtab = ctk.CTkButton(show_data_bottom_frame, text="Clear", width=100, command=on_click_show_data_tab_clear)
 clear_btn_showtab.grid(row=2, column=1, padx=20, pady=5)
