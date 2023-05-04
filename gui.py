@@ -37,6 +37,7 @@ def openImage():
 
 def on_click_save_image():
     bnd.save_image()
+    messagebox.showinfo(title="Success", message="You have successfully saved the data to a file")
 
 
 def on_click_show_data():
