@@ -38,6 +38,7 @@ def get_hashed_text(word):
 
 def load_vault_from_img():
     global vault
+    vault.clear()
 
     try:
         # Extract the hidden file in the image
@@ -59,6 +60,10 @@ def load_vault_from_img():
 
 def open_image():
     global img_path
+    global vault
+    print(vault)
+    vault.clear()
+    print(vault)
     img_path = input("Enter image path : ")
     image = Image.open(img_path)
     image.show()
@@ -104,45 +109,54 @@ def save_image():
         print("the temporary files are deleted")
 
 
-def hide_text():
+def hide_text(secret, key, action):
     global vault
     global data_saved
-    secret = input("Enter the secret to hide : ")
-    k = input("Enter secret key : ")
-    encrypted_data = crypto.encrypt_text(key=k, text=secret)
+    try:
+        if action == "hide":
+            encrypted_data = crypto.encrypt_text(key=key, text=secret)
 
-    text_to_hide = "plaintext###" + encrypted_data
+            text_to_hide = "plaintext###" + encrypted_data
 
-    key = get_hashed_text(k)
-    vault[key] = text_to_hide
+            key = get_hashed_text(key)
+            vault[key] = text_to_hide
 
-    data_saved = False
+            data_saved = False
+        else:
+            key = get_hashed_text(key)
+            vault.pop(key)
+        return True
+    except Exception:
+        return False
 
-    print(vault)
-    print(len(vault))
 
 
 
-def hide_file():
+def hide_file(secret, key):
     global vault
     global data_saved
-    file_path = input("Enter the file path : ")
-    k = input("Enter key : ")
+    file_path = secret
+    k = key
+    print("inside bnd hide_file fun")
     print(file_path)
-    file_name = os.path.basename(file_path)
+    try:
+        file_name = os.path.basename(file_path)
 
-    encoded_file = get_encoded_file(file_path)
+        encoded_file = get_encoded_file(file_path)
 
-    encrypted_data = crypto.encrypt_text(key=k, text=encoded_file)
+        encrypted_data = crypto.encrypt_text(key=k, text=encoded_file)
 
-    encoded_file = file_name + "###" + encrypted_data
-    print(encoded_file)
-    # k = input("Enter key : ")
-    key = get_hashed_text(k)
+        encoded_file = file_name + "###" + encrypted_data
+        print(encoded_file)
+        # k = input("Enter key : ")
+        key = get_hashed_text(k)
 
-    vault[key] = encoded_file
+        vault[key] = encoded_file
 
-    data_saved = False
+        data_saved = False
+        return True
+    except Exception:
+        return False
 
 
 def show_data(k):
@@ -176,6 +190,7 @@ def show_data(k):
         if file_name == "plaintext":
             secret = crypto.decrypt_text(key=k, ciphertext=cipher)
             return {"type": "plaintext",
+
                     "result": secret}
 
         else:
