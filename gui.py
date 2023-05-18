@@ -19,7 +19,7 @@ is_image_open = False
 def openImage():
     global is_image_open
     # filename = tkinter.filedialog.askopenfilename(initialdir="C:/Users/Arnold/Pictures", title="Select a File", filetypes=[('Image File', '*.png')])
-    filepath = tkinter.filedialog.askopenfilename(initialdir=INITIAL_DIRECTORY, title="Select a File", filetypes=[('Image File', '*.png *.jpg *.jpeg')])
+    filepath = tkinter.filedialog.askopenfilename(initialdir=INITIAL_DIRECTORY, title="Select a File", filetypes=[('Image File', '*.png')])
 
     if filepath:
         filename, file_ext = os.path.splitext(filepath)

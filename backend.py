@@ -5,7 +5,9 @@ import os
 import zipfile
 import hashlib
 import base64
+from stego_lsb import LSBSteg as lsb
 
+LSB_BITS = 3
 
 img_path = str
 vault = {}
@@ -42,20 +44,16 @@ def load_vault_from_img():
 
     try:
         # Extract the hidden file in the image
-        os.system(f'tar -xvf {img_path}')
-
+        lsb.recover_data(steg_image_path=str(img_path), output_file_path="data.json", num_lsb=LSB_BITS)
+    except ValueError:
+        print("No data is hidden in this image")
+    else:
         with open('data.json', 'r') as f:
             vault_str = f.read()
-
-        os.remove("data.json")
-
-        # Lsb retrieval
-        # vault_str = lsb.reveal(str(img_path))
-
         vault = json.loads(vault_str)
-
-    except FileNotFoundError:
-        print("No data is hidden in this image")
+    finally:
+        max_size_able_to_hide, data_size = lsb.analysis(image_file_path=str(img_path), input_file_path="data.json", num_lsb=LSB_BITS)
+        os.remove("data.json")
 
 
 def open_image():
@@ -64,7 +62,6 @@ def open_image():
     print(vault)
     vault.clear()
     print(vault)
-    img_path = input("Enter image path : ")
     image = Image.open(img_path)
     image.show()
 
@@ -137,17 +134,18 @@ def hide_file(secret, key):
     global data_saved
     file_path = secret
     k = key
-    print("inside bnd hide_file fun")
-    print(file_path)
+    # print("inside bnd hide_file fun")
+    # print(file_path)
     try:
         file_name = os.path.basename(file_path)
 
         encoded_file = get_encoded_file(file_path)
 
-        encrypted_data = crypto.encrypt_text(key=k, text=encoded_file)
+        # encrypted_data = crypto.encrypt_text(key=k, text=encoded_file)
 
-        encoded_file = file_name + "###" + encrypted_data
-        print(encoded_file)
+        # encoded_file = file_name + "###" + encrypted_data
+        encoded_file = file_name + "###" + encoded_file
+        # print(encoded_file)
         # k = input("Enter key : ")
         key = get_hashed_text(k)
 
@@ -194,12 +192,14 @@ def show_data(k):
                     "result": secret}
 
         else:
-            secret_file_in_base64 = crypto.decrypt_text(key=k, ciphertext=cipher)
+            # secret_file_in_base64 = crypto.decrypt_text(key=k, ciphertext=cipher)
+            #
+            # # Decode the Base64 string into image data
+            # file_data = base64.b64decode(secret_file_in_base64)
+            # print(type(file_data))
+            # print(len(file_data))
 
-            # Decode the Base64 string into image data
-            file_data = base64.b64decode(secret_file_in_base64)
-            print(type(file_data))
-            print(len(file_data))
+            file_data = base64.b64decode(cipher)
 
             file_size = len(file_data)/1048576
 
