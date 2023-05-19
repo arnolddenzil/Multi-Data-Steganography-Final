@@ -40,7 +40,7 @@ def show_image_data_on_textbox():
     else:
         image_file_size = str(round(image_file_size / 1024 / 1024, 2)) + " MB"
 
-    vault_size = len(json.dumps(bnd.vault).encode('utf-8'))
+    vault_size = len(json.dumps(bnd.vault).encode('utf-8')) - 2
     if vault_size < 1024:
         vault_size = str(round(vault_size, 2)) + " B"
     elif vault_size / 1024 < 1024:
@@ -89,7 +89,7 @@ def openImage():
         bnd.img_path = filepath
         print(bnd.img_path)
 
-        image = image.resize((700, 600))
+        image = image.resize((800, 600))
 
         # Load an image in the script
         one = ImageTk.PhotoImage(image=image)
@@ -208,7 +208,7 @@ def on_click_save_as_file():
 left_frame = ctk.CTkFrame(root)
 left_frame.pack(side="left", padx=10, pady=10, fill="both")
 
-canvas = tkinter.Canvas(left_frame, width=700, height=600,)
+canvas = tkinter.Canvas(left_frame, width=800, height=600,)
 canvas.grid(row=0, column=0, columnspan=2, pady=5)
 
 open_image_btn = ctk.CTkButton(left_frame, text="Open Image", command=openImage)
