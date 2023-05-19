@@ -16,7 +16,7 @@ hash_obj = hashlib.sha3_224()
 
 data_saved = True
 
-
+max_size_able_to_hide_in_bytes = 0
 
 def get_encoded_file(file_path):
 
@@ -39,6 +39,7 @@ def get_hashed_text(word):
 
 
 def load_vault_from_img():
+    global max_size_able_to_hide_in_bytes
     global vault
     vault.clear()
 
@@ -52,27 +53,17 @@ def load_vault_from_img():
             vault_str = f.read()
         vault = json.loads(vault_str)
     finally:
-        max_size_able_to_hide, data_size = lsb.analysis(image_file_path=str(img_path), input_file_path="data.json", num_lsb=LSB_BITS)
+        max_size_able_to_hide_in_bytes, data_size_in_bytes, maximum_size_to_hide, input_file_size, x_resolution, y_resolution = lsb.analysis(image_file_path=str(img_path), input_file_path="data.json", num_lsb=LSB_BITS)
         os.remove("data.json")
-
-
-def open_image():
-    global img_path
-    global vault
-    print(vault)
-    vault.clear()
-    print(vault)
-    image = Image.open(img_path)
-    image.show()
-
-    load_vault_from_img()
+        print("*****")
+        print(len(json.dumps(vault)))
+        return max_size_able_to_hide_in_bytes, data_size_in_bytes, maximum_size_to_hide, input_file_size, x_resolution, y_resolution
 
 
 def save_image():
     global vault
     global data_saved
-    print(img_path)
-    print(len(vault))
+
 
 
     # Encode the data as a JSON string
@@ -87,20 +78,21 @@ def save_image():
     # Save the JSON string to a file
     with open('data.json', 'w') as f:
         f.write(json_string)
-
-    # Create a new zip file
-    with zipfile.ZipFile('temporary.zip', 'w') as zip:
-        # Add a file to the zip file
-        zip.write('data.json')
-
-    # Hide zip file in an image and save new image
-    os.system(f"copy /b {img_path}+temporary.zip {img_path}")
+    try:
+        filename, file_ext = os.path.splitext(str(img_path))
+        # lsb.hide_data(input_image_path=str(img_path), input_file_path="data.json", steg_image_path=f"{filename}_lsb{file_ext}", num_lsb=LSB_BITS, compression_level=9)
+        lsb.hide_data(input_image_path=str(img_path), input_file_path="data.json",
+                      steg_image_path=str(img_path), num_lsb=LSB_BITS, compression_level=9)
+    except OverflowError:
+        print("message is too big")
+    except ValueError as e:
+        print("size of input file demands more space than the capacity able to store")
+        print(e)
 
     os.remove("data.json")
-    os.remove("temporary.zip")
 
     data_saved = True
-    if os.path.exists("data.json") or os.path.exists("temporary.zip"):
+    if os.path.exists("data.json"):
         print("file still exit")
     else:
         print("the temporary files are deleted")
@@ -114,17 +106,48 @@ def hide_text(secret, key, action):
             encrypted_data = crypto.encrypt_text(key=key, text=secret)
 
             text_to_hide = "plaintext###" + encrypted_data
-
             key = get_hashed_text(key)
+            # print("hashed key :", key)
+            # print("hashed key length :", len(key))
+            # print("Value length :", len(text_to_hide))
+            temp_vault = vault.copy()
+            temp_vault[key] = text_to_hide
+
+            # Convert the dictionary to JSON
+            json_data = json.dumps(temp_vault)
+
+            # Calculate the size of 'vault' in bytes
+            size_of_vault = len(json_data.encode('utf-8'))
+            if size_of_vault > max_size_able_to_hide_in_bytes:
+                rem_cap = max_size_able_to_hide_in_bytes - len(json.dumps(vault).encode('utf-8'))
+                if rem_cap < 1024:
+                    rem_cap = str(round(rem_cap, 2)) + " B"
+                elif rem_cap / 1024 < 1024:
+                    rem_cap = str(round(rem_cap / 1024, 2)) + " KB"
+                else:
+                    rem_cap = str(round(rem_cap / 1024 / 1024, 2)) + " MB"
+
+                size_needed = len(key)+len(text_to_hide)+8
+                if size_needed < 1024:
+                    size_needed = str(round(size_needed, 2)) + " B"
+                elif size_needed / 1024 < 1024:
+                    size_needed = str(round(size_needed / 1024, 2)) + " KB"
+                else:
+                    size_needed = str(round(size_needed / 1024 / 1024, 2)) + " MB"
+                return {"Status": False,
+                        "Remaining_Capacity": rem_cap,
+                        "Size_to_store_msg": size_needed}
+
+
             vault[key] = text_to_hide
 
             data_saved = False
         else:
             key = get_hashed_text(key)
             vault.pop(key)
-        return True
+        return {"Status": True}
     except Exception:
-        return False
+        return {"Status": False}
 
 
 
@@ -149,12 +172,46 @@ def hide_file(secret, key):
         # k = input("Enter key : ")
         key = get_hashed_text(k)
 
+
+        temp_vault = vault.copy()
+        temp_vault[key] = encoded_file
+
+
+
+        # Convert the dictionary to JSON
+        json_data = json.dumps(temp_vault)
+
+        # Calculate the size of 'vault' in bytes
+        size_of_vault = len(json_data.encode('utf-8'))
+        if size_of_vault > max_size_able_to_hide_in_bytes:
+
+            rem_cap = max_size_able_to_hide_in_bytes - len(json.dumps(vault).encode('utf-8'))
+            if rem_cap < 1024:
+                rem_cap = str(round(rem_cap, 2)) + " B"
+            elif rem_cap / 1024 < 1024:
+                rem_cap = str(round(rem_cap / 1024, 2)) + " KB"
+            else:
+                rem_cap = str(round(rem_cap / 1024 / 1024, 2)) + " MB"
+            print("remaining Capacity : ", rem_cap)
+
+            size_needed = len(key) + len(encoded_file) + 8
+            if size_needed < 1024:
+                size_needed = str(round(size_needed, 2)) + " B"
+            elif size_needed / 1024 < 1024:
+                size_needed = str(round(size_needed / 1024, 2)) + " KB"
+            else:
+                size_needed = str(round(size_needed / 1024 / 1024, 2)) + " MB"
+            return {"Status": False,
+                    "Remaining_Capacity": rem_cap,
+                    "Size_to_store_msg": size_needed}
+
+
         vault[key] = encoded_file
 
         data_saved = False
-        return True
+        return {"Status": True}
     except Exception:
-        return False
+        return {"Status": False}
 
 
 def show_data(k):

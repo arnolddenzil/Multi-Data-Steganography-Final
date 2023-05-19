@@ -18,7 +18,7 @@ def encrypt_text(key, text):
     padded_text += b"\0" * (AES.block_size - len(padded_text) % AES.block_size)
 
     key_padded = pad_text(key)
-    print(key_padded)
+
 
     # Create a new AES cipher using the key and IV
     # iv = hashlib.md5(key.encode('utf-8')).digest()

@@ -1,3 +1,5 @@
+import json
+
 import customtkinter as ctk
 import tkinter
 from PIL import Image, ImageTk
@@ -5,25 +7,76 @@ import backend as bnd
 from tkinter import messagebox
 import os
 
-INITIAL_DIRECTORY = "F:\Projects\Multi-Data-Steganography-Final"
+INITIAL_DIRECTORY = "C:/Users/Arnold/Pictures/test"
 
 root = ctk.CTk()
 ctk.set_appearance_mode("dark")
 
-root.title("Multidata Steganography")
+root.title("ENIGMA")
 
 received_secret_data = {"status": False}
 
 is_image_open = False
 
+max_size_able_to_hide_in_bytes = 0
+data_size_in_bytes = 0
+
+x_res: int
+y_res: int
+
+max_size_able_to_hide: str
+data_size: str
+
+
+
+def show_image_data_on_textbox():
+    image_file_size = os.stat(str(bnd.img_path)).st_size
+    if image_file_size < 1024:
+        image_file_size = str(round(image_file_size, 2)) + " B"
+
+    elif image_file_size / 1024 < 1024:
+        image_file_size = str(round(image_file_size / 1024, 2)) + " KB"
+
+    else:
+        image_file_size = str(round(image_file_size / 1024 / 1024, 2)) + " MB"
+
+    vault_size = len(json.dumps(bnd.vault).encode('utf-8'))
+    if vault_size < 1024:
+        vault_size = str(round(vault_size, 2)) + " B"
+    elif vault_size / 1024 < 1024:
+        vault_size = str(round(vault_size / 1024, 2)) + " KB"
+    else:
+        vault_size = str(round(vault_size / 1024 / 1024, 2)) + " MB"
+
+    hidden_data_textbox_showtab.configure(state="normal")
+    hidden_data_textbox_showtab.delete("0.0", "end")
+    hidden_data_textbox_showtab.insert("0.0", f'''
+Image Detail :
+--------------------------------
+Image resolution: {x_res} x {y_res}
+
+Path : {bnd.img_path}
+
+Image size : {image_file_size}
+
+Maximum storage size of the image : {max_size_able_to_hide}
+
+Size of data stored in the image  : {vault_size}
+''')
+    hidden_data_textbox_showtab.configure(state="disabled")
+
+
 def openImage():
+    global x_res, y_res
     global is_image_open
-    # filename = tkinter.filedialog.askopenfilename(initialdir="C:/Users/Arnold/Pictures", title="Select a File", filetypes=[('Image File', '*.png')])
-    filepath = tkinter.filedialog.askopenfilename(initialdir=INITIAL_DIRECTORY, title="Select a File", filetypes=[('Image File', '*.png')])
+    global max_size_able_to_hide_in_bytes
+    global data_size_in_bytes
+    global max_size_able_to_hide
+    global data_size
+    filepath = tkinter.filedialog.askopenfilename(initialdir=INITIAL_DIRECTORY, title="Select a File", filetypes=[('*.png', '*.png')])
 
     if filepath:
-        filename, file_ext = os.path.splitext(filepath)
-        print(filename, file_ext, type(file_ext))
+        # filename, file_ext = os.path.splitext(filepath)
         # Replace forward slash of filepath with backward slash for proper image saving
         filepath = filepath.replace("/", "\\")
         image = Image.open(filepath)
@@ -45,12 +98,15 @@ def openImage():
         # Add image to the Canvas Items
         canvas.create_image(0, 0, anchor="nw", image=one)
 
-        bnd.load_vault_from_img()
+        max_size_able_to_hide_in_bytes, data_size_in_bytes, max_size_able_to_hide, data_size, x_res, y_res = bnd.load_vault_from_img()
+        show_image_data_on_textbox()
+
         is_image_open = True
 
 
 def on_click_save_image():
     bnd.save_image()
+    show_image_data_on_textbox()
     messagebox.showinfo(title="Success", message="You have successfully saved the data to a file")
 
 
@@ -203,6 +259,33 @@ secret_filepath = ""
 # ---------------------------------------------------------------------------------------------------------------------
 # Hide Section Operations
 
+def get_remaining_img_capacity():
+    # Convert the dictionary to JSON
+    json_data = json.dumps(bnd.vault)
+
+    # Calculate the size of 'vault' in bytes
+    size_of_vault = len(json_data.encode('utf-8'))
+    capacity_in_bytes = max_size_able_to_hide_in_bytes - size_of_vault
+    if capacity_in_bytes < 1024:
+        return f"{round(capacity_in_bytes,2)} B"
+    elif capacity_in_bytes / 1024 < 1024:
+        return f"{round(capacity_in_bytes / 1024, 2)} KB"
+    else:
+        return f"{round(capacity_in_bytes / 1024 / 1024, 2)} MB"
+
+def check_if_data_will_fit(data):
+    # Convert the dictionary to JSON
+    json_data = json.dumps(bnd.vault)
+
+    # Calculate the size of 'vault' in bytes
+    size_of_vault = len(json_data.encode('utf-8'))
+    print("Checking if data can fit in the vault")
+    print(len(data) + size_of_vault)
+    if len(data) + size_of_vault > max_size_able_to_hide_in_bytes:
+        return False
+    else:
+        return True
+
 def onclick_hide_data_btn():
     global is_image_open
     global secret_filepath
@@ -224,10 +307,13 @@ def onclick_hide_data_btn():
                 sure_to_proceed = messagebox.askokcancel(title="Are you sure ?", message="There is no data given to hide in the textbox. This could  erase any previous data stored for this key")
                 if sure_to_proceed:
                     confirm_hide = bnd.hide_text(secret_txt, key1, "pop")
-                    if confirm_hide:
-                        messagebox.showinfo(title="Successful", message="Operation Successful")
+                    if confirm_hide["Status"]:
+                        capacity = get_remaining_img_capacity()
+                        messagebox.showinfo(title="Successful", message=f"Operation Successful\n "
+                                                                        f"Remaining capacity to store data : {capacity}")
                     else:
-                        messagebox.showerror(title="Oh oh.. ☹️", message="There seems to be some issue when storing the data")
+                        messagebox.showerror(title="Oh oh.. ☹️", message=f"The size required to store this data : {confirm_hide['Size_to_store_msg']}\n"
+                                                                         f"But the capacity that is remaining is : {confirm_hide['Remaining_Capacity']}")
             else:
                 existing_data = bnd.show_data(k=key1)
                 if existing_data["type"] in ["plaintext", "file"]:
@@ -236,18 +322,24 @@ def onclick_hide_data_btn():
                     if sure_to_proceed:
 
                         confirm_hide = bnd.hide_text(secret_txt, key1, "hide")
-                        if confirm_hide:
-                            messagebox.showinfo(title="Successful", message="Operation Successful")
+                        if confirm_hide["Status"]:
+                            capacity = get_remaining_img_capacity()
+                            messagebox.showinfo(title="Successful", message=f"Operation Successful\n "
+                                                                            f"Remaining capacity to store data : {capacity}")
                         else:
                             messagebox.showerror(title="Oh oh.. ☹️",
-                                                 message="There seems to be some issue when storing the data")
+                                                 message=f"The size required to store this data : {confirm_hide['Size_to_store_msg']}\n"
+                                                         f"But the capacity that is remaining is : {confirm_hide['Remaining_Capacity']}")
                 else:
                     confirm_hide = bnd.hide_text(secret_txt, key1, "hide")
-                    if confirm_hide:
-                        messagebox.showinfo(title="Successful", message="Operation Successful")
+                    if confirm_hide["Status"]:
+                        capacity = get_remaining_img_capacity()
+                        messagebox.showinfo(title="Successful", message=f"Operation Successful\n "
+                                                                        f"Remaining capacity to store data : {capacity}")
                     else:
                         messagebox.showerror(title="Oh oh.. ☹️",
-                                             message="There seems to be some issue when storing the data")
+                                             message=f"The size required to store this data : {confirm_hide['Size_to_store_msg']}\n"
+                                                     f"But the capacity that is remaining is : {confirm_hide['Remaining_Capacity']}")
         else:
             # if file type is a File
             print(secret_filepath)
@@ -258,17 +350,24 @@ def onclick_hide_data_btn():
                                                              message="There is already some data present for this key. This could replace any previous data stored for this key")
                     if sure_to_proceed:
                         confirm_hide = bnd.hide_file(secret_filepath, key1)
-                        if confirm_hide:
-                            messagebox.showinfo(title="Successful", message="Data is hidden successfully")
+                        if confirm_hide["Status"]:
+                            capacity = get_remaining_img_capacity()
+                            messagebox.showinfo(title="Successful", message=f"Operation Successful\n "
+                                                                            f"Remaining capacity to store data : {capacity}")
                         else:
-                            messagebox.showerror(title="Oh oh.. ☹️", message="There seems to be some issue when storing the data")
+                            messagebox.showerror(title="Oh oh.. ☹️",
+                                                 message=f"The size required to store this data : {confirm_hide['Size_to_store_msg']}\n"
+                                                         f"But the capacity that is remaining is : {confirm_hide['Remaining_Capacity']}")
                 else:
                     confirm_hide = bnd.hide_file(secret_filepath, key1)
-                    if confirm_hide:
-                        messagebox.showinfo(title="Successful", message="Operation Successful")
+                    if confirm_hide["Status"]:
+                        capacity = get_remaining_img_capacity()
+                        messagebox.showinfo(title="Successful", message=f"Operation Successful\n "
+                                                                        f"Remaining capacity to store data : {capacity}")
                     else:
                         messagebox.showerror(title="Oh oh.. ☹️",
-                                             message="There seems to be some issue when storing the data")
+                                             message=f"The size required to store this data : {confirm_hide['Size_to_store_msg']}\n"
+                                                     f"But the capacity that is remaining is : {confirm_hide['Remaining_Capacity']}")
             else:
                 messagebox.showerror(title="Oh oh.. ☹ ", message="You have not chosen any file to hide")
 
