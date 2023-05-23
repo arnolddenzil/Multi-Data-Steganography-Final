@@ -55,8 +55,6 @@ def load_vault_from_img():
     finally:
         max_size_able_to_hide_in_bytes, data_size_in_bytes, maximum_size_to_hide, input_file_size, x_resolution, y_resolution = lsb.analysis(image_file_path=str(img_path), input_file_path="data.json", num_lsb=LSB_BITS)
         os.remove("data.json")
-        print("*****")
-        print(len(json.dumps(vault)))
         return max_size_able_to_hide_in_bytes, data_size_in_bytes, maximum_size_to_hide, input_file_size, x_resolution, y_resolution
 
 

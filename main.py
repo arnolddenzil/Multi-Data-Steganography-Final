@@ -86,22 +86,26 @@ def save_image():
     with open('data.json', 'w') as f:
         f.write(json_string)
 
-    # Create a new zip file
-    with zipfile.ZipFile('temporary.zip', 'w') as zip:
-        # Add a file to the zip file
-        zip.write('data.json')
+    print("data saved to data.json")
 
-    # Hide zip file in an image and save new image
-    os.system(f"copy /b {img_path}+temporary.zip {img_path}")
+    # # Create a new zip file
+    # with zipfile.ZipFile('temporary.zip', 'w') as zip:
+    #     # Add a file to the zip file
+    #     zip.write('data.json')
+    #
+    # # Hide zip file in an image and save new image
+    # os.system(f"copy /b {img_path}+temporary.zip {img_path}")
+    #
+    # os.remove("data.json")
+    # os.remove("temporary.zip")
+    #
+    # data_saved = True
+    # if os.path.exists("data.json") or os.path.exists("temporary.zip"):
+    #     print("file still exit")
+    # else:
+    #     print("the temporary files are deleted")
 
-    os.remove("data.json")
-    os.remove("temporary.zip")
 
-    data_saved = True
-    if os.path.exists("data.json") or os.path.exists("temporary.zip"):
-        print("file still exit")
-    else:
-        print("the temporary files are deleted")
 
 
 def hide_text():
@@ -133,9 +137,10 @@ def hide_file():
 
     encoded_file = get_encoded_file(file_path)
 
-    encrypted_data = crypto.encrypt_text(key=k, text=encoded_file)
+    # encrypted_data = crypto.encrypt_text(key=k, text=encoded_file)
 
-    encoded_file = file_name + "###" + encrypted_data
+    # encoded_file = file_name + "###" + encrypted_data
+    encoded_file = file_name + "###" + encoded_file
     print(encoded_file)
     # k = input("Enter key : ")
     key = get_hashed_text(k)
@@ -177,11 +182,12 @@ def show_data():
             print(secret)
 
         else:
-            secret_file_in_base64 = crypto.decrypt_text(key=k, ciphertext=cipher)
+            # secret_file_in_base64 = crypto.decrypt_text(key=k, ciphertext=cipher)
 
 
-            # Decode the Base64 string into image data
-            file_data = base64.b64decode(secret_file_in_base64)
+            # # Decode the Base64 string into image data
+            # file_data = base64.b64decode(secret_file_in_base64)
+            file_data = base64.b64decode(cipher)
 
             print(file_data)
             print(type(file_data))
