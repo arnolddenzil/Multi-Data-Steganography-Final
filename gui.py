@@ -7,12 +7,21 @@ import backend as bnd
 from tkinter import messagebox
 import os
 
-INITIAL_DIRECTORY = "C:/Users/Arnold/Pictures/test"
+# Get the username of the current user
+username = os.getlogin()
+
+# Replace "Arnold" with the obtained username
+INITIAL_DIRECTORY = f"C:/Users/{username}/Pictures"
+
+
 
 root = ctk.CTk()
 ctk.set_appearance_mode("dark")
+# root.title("ENIGMA")
+root.title("HushHider")
+root.resizable(False, False)
+root.after(201, lambda :root.iconbitmap("invisible-man.ico"))
 
-root.title("ENIGMA")
 
 received_secret_data = {"status": False}
 
