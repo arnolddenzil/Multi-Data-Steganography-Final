@@ -1,11 +1,13 @@
 import json
 
 import customtkinter as ctk
-import tkinter
-from PIL import Image, ImageTk
+from tkinter import *
+from PIL import Image, ImageTk, _imaging
 import backend as bnd
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 import os
+import sys
+
 
 # Get the username of the current user
 username = os.getlogin()
@@ -14,13 +16,23 @@ username = os.getlogin()
 INITIAL_DIRECTORY = f"C:/Users/{username}/Pictures"
 
 
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
+
 
 root = ctk.CTk()
 ctk.set_appearance_mode("dark")
 # root.title("ENIGMA")
 root.title("HushHider")
 root.resizable(False, False)
-root.after(201, lambda :root.iconbitmap("invisible-man.ico"))
+root.after(201, lambda :root.iconbitmap(resource_path("invisible-man.ico")))
 
 
 received_secret_data = {"status": False}
@@ -82,7 +94,7 @@ def openImage():
     global data_size_in_bytes
     global max_size_able_to_hide
     global data_size
-    filepath = tkinter.filedialog.askopenfilename(initialdir=INITIAL_DIRECTORY, title="Select a File", filetypes=[('*.png', '*.png')])
+    filepath = filedialog.askopenfilename(initialdir=INITIAL_DIRECTORY, title="Select a File", filetypes=[('*.png', '*.png')])
 
     if filepath:
         # filename, file_ext = os.path.splitext(filepath)
@@ -188,7 +200,7 @@ def on_click_save_as_file():
             file_name = received_secret_data["filename"]
             file_type = received_secret_data["filename"].split(".")[-1]
             print(file_type)
-            filepath = tkinter.filedialog.asksaveasfilename(initialdir=INITIAL_DIRECTORY,
+            filepath = filedialog.asksaveasfilename(initialdir=INITIAL_DIRECTORY,
                                                             title="Select File Storage Path",
                                                             initialfile=file_name,
                                                             filetypes=[(file_type, file_type)],
@@ -201,7 +213,7 @@ def on_click_save_as_file():
                     f.write(received_secret_data["content"])
                 messagebox.showinfo(title="Success", message="You have successfully saved the data to a file")
         else:
-            filepath = tkinter.filedialog.asksaveasfilename(initialdir=INITIAL_DIRECTORY,
+            filepath = filedialog.asksaveasfilename(initialdir=INITIAL_DIRECTORY,
                                                             title="Select File Storage Path",
                                                             initialfile="secret",
                                                             filetypes=[(".txt", ".txt")],
@@ -217,7 +229,7 @@ def on_click_save_as_file():
 left_frame = ctk.CTkFrame(root)
 left_frame.pack(side="left", padx=10, pady=10, fill="both")
 
-canvas = tkinter.Canvas(left_frame, width=800, height=600,)
+canvas = Canvas(left_frame, width=800, height=600,)
 canvas.grid(row=0, column=0, columnspan=2, pady=5)
 
 open_image_btn = ctk.CTkButton(left_frame, text="Open Image", command=openImage)
@@ -401,7 +413,7 @@ def on_click_browse_file_btn():
     hide_data_textbox_hidetab.configure(state="normal")
     hide_data_textbox_hidetab.delete("0.0", "end")
     hide_data_textbox_hidetab.configure(state="disabled")
-    secret_filepath = tkinter.filedialog.askopenfilename(initialdir=INITIAL_DIRECTORY, title="Select a File", filetypes=[('Any File', '*.*')])
+    secret_filepath = filedialog.askopenfilename(initialdir=INITIAL_DIRECTORY, title="Select a File", filetypes=[('Any File', '*.*')])
     if secret_filepath:
         file_stats = os.stat(secret_filepath)
         # File size in MB
